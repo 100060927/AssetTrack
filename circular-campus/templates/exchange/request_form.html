@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{% if asset %}Request {{ asset.name }}{% else %}New resource request{% endif %}</h1>
+{% if asset %}<p class="sub">{{ asset.tag }} from {{ asset.department }} ({{ asset.quantity }} available) will be reserved for you and sent for approval.</p>
+{% else %}<p class="sub">Describe what you need. You can then get the best matching surplus items.</p>{% endif %}
+<form method="post" class="card narrow">{% csrf_token %}
+  {% include "_form.html" %}
+  <button class="btn">Submit request</button> <a class="btn ghost" href="{% url 'request_list' %}">Cancel</a>
+</form>
+{% endblock %}

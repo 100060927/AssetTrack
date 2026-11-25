@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Holds · Circular Campus{% endblock %}
+{% block content %}
+<div class="row spread"><h1>Holds</h1>
+  <form method="post" action="{% url 'holds_run_expiry' %}">{% csrf_token %}<button class="btn">Check for expired holds now</button></form></div>
+<p class="sub">Items put aside for a request are held for a limited time. When a hold runs out before the item is sent, the system releases it back to the marketplace and reopens the request. Requesters and officers get a warning a day before. This check also runs automatically with <code>python manage.py process_expiry</code>.</p>
+{% if demo %}
+<form method="post" action="{% url 'holds_run_expiry' %}" class="card row end">{% csrf_token %}
+  <div><label for="id_pretend">Demo only: act as if this many days have passed</label>
+    <input type="number" id="id_pretend" name="pretend_days" min="1" max="30" value="8" style="max-width:120px"></div>
+  <button class="btn ghost">Run the check as if time has passed</button>
+  <span class="muted">Shown only in demo mode. Try 6 for warnings and reminders, 8 to release expired holds.</span>
+</form>
+{% endif %}
+{% if holds %}
+<div class="table-wrap"><table>
+  <tr><th>Item</th><th>Request</th><th>Stage</th><th>Hold ends</th>{% if can_extend %}<th>Extend</th>{% endif %}</tr>
+  {% for h in holds %}
+  <tr><td><a href="{% url 'asset_detail' h.asset.pk %}">{{ h.asset.tag }}</a> {{ h.asset.name }}<div class="muted">{{ h.quantity }} unit(s) · {{ h.asset.department.code }} → {{ h.request.department.code }}</div></td>
+    <td><a href="{% url 'request_detail' h.request.pk %}">{{ h.request.code }}</a><div class="muted">{{ h.request.requester.display_name }}</div></td>
+    <td>{% if h.transfer %}Approved, waiting for dispatch{% else %}Waiting for approval{% endif %}</td>
+    <td>{{ h.expires_at|date:"d M Y H:i" }}<div class="muted">{% if h.expires_at <= now %}<strong>Expired</strong>{% else %}in {{ h.expires_at|timeuntil }}{% endif %}</div></td>
+    {% if can_extend %}<td><details class="mini"><summary>Extend</summary>
+      <form method="post" action="{% url 'hold_extend' h.pk %}" class="stack">{% csrf_token %}
+        <input type="number" name="days" min="1" max="14" value="3" aria-label="Days">
+        <input type="text" name="reason" placeholder="Reason" required>
+        <button class="btn small">Extend</button></form></details></td>{% endif %}</tr>
+  {% endfor %}
+</table></div>
+{% else %}<div class="card empty">No active holds.</div>{% endif %}
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}{{ req.code }} · Circular Campus{% endblock %}
+{% block content %}
+<div class="row spread">
+  <h1>{{ req.code }}: {{ req.title }} <span class="badge {{ req.state }}">{{ req.get_state_display }}</span></h1>
+  {% if can_cancel %}<form method="post" action="{% url 'request_cancel' req.pk %}">{% csrf_token %}<button class="btn danger">Cancel request</button></form>{% endif %}
+</div>
+<div class="card">
+  <dl class="facts">
+    <dt>Requester</dt><dd>{{ req.requester.display_name }}, {{ req.department }}</dd>
+    <dt>Purpose</dt><dd>{{ req.purpose|default:"-"|linebreaksbr }}</dd>
+    <dt>Category</dt><dd>{{ req.category|default:"Any" }}</dd>
+    <dt>Minimum condition</dt><dd>{{ req.get_min_condition_display }}</dd>
+    <dt>Quantity</dt><dd>{{ req.quantity }} needed · {{ req.received_quantity }} received</dd>
+    <dt>Required by</dt><dd>{{ req.required_date|date:"d M Y"|default:"Not stated" }}</dd>
+    <dt>Submitted</dt><dd>{{ req.created_at|date:"d M Y H:i" }}</dd>
+  </dl>
+</div>
+
+{% if reservations %}
+<h2>Items for this request</h2>
+<div class="table-wrap"><table>
+  <tr><th>Item</th><th>Qty</th><th>Approval</th><th>Transfer</th><th></th></tr>
+  {% for r in reservations %}
+  <tr>
+    <td><a href="{% url 'asset_detail' r.asset.pk %}">{{ r.asset.tag }}</a> {{ r.asset.name }}</td>
+    <td>{{ r.quantity }}</td>
+    <td><span class="badge {{ r.approval_case.state }}">{{ r.approval_case.get_state_display }}</span>
+      {% for d in r.approval_case.decisions.all %}<div class="muted">{{ d.get_result_display }} by {{ d.approver.display_name }}, {{ d.created_at|date:"d M H:i" }}{% if d.reason %}: {{ d.reason }}{% endif %}</div>{% endfor %}</td>
+    <td>{% if r.transfer %}<span class="badge {{ r.transfer.state }}">{{ r.transfer.get_state_display }}</span>
+      {% if r.transfer.received_at %}<div class="muted">Received {{ r.transfer.received_at|date:"d M H:i" }}</div>{% endif %}
+      {% if r.transfer.problem %}<div class="muted">Problem: {{ r.transfer.get_problem_display }}. {{ r.transfer.problem_note }}</div>{% endif %}
+      {% if r.transfer.resolution %}<div class="muted">Resolved: {{ r.transfer.get_resolution_display }}. {{ r.transfer.resolution_note }}</div>{% elif r.transfer.state == 'DISPUTED' %}<div class="muted">Waiting for an asset officer to resolve it</div>{% endif %}
+      {% elif r.state == 'RELEASED' %}<span class="muted">Hold released</span>{% else %}<span class="muted">Waiting for approval</span>{% endif %}</td>
+    <td>{% if is_owner and r.transfer and r.transfer.state == 'IN_TRANSIT' %}
+      <form method="post" action="{% url 'transfer_receive' r.transfer.pk %}">{% csrf_token %}<button class="btn small">Confirm receipt</button></form>
+      <details class="mini"><summary>Something wrong?</summary>
+        <form method="post" action="{% url 'transfer_problem' r.transfer.pk %}" class="stack">{% csrf_token %}
+          <select name="problem" aria-label="What went wrong">{% for value, label in problems %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select>
+          <input type="text" name="note" placeholder="Describe the problem" required>
+          <button class="btn small danger">Report a problem</button></form></details>{% endif %}</td>
+  </tr>
+  {% endfor %}
+</table></div>
+{% endif %}
+
+{% if is_owner and req.is_open_for_matching %}
+<div class="row spread">
+  <h2>Suggested surplus items{% if req.remaining_quantity != req.quantity %} ({{ req.remaining_quantity }} still needed){% endif %}</h2>
+  <form method="post" action="{% url 'request_find_matches' req.pk %}">{% csrf_token %}
+    <button class="btn">{% if recommendations %}Refresh matches{% else %}Find matching items{% endif %}</button></form>
+</div>
+{% if recommendations %}
+<p class="note">These are AI-assisted suggestions and can be wrong. Check the item before you accept. Accepting reserves the item and sends it for approval; nothing happens without your click.
+  {% with run=recommendations.0.ai_run %}<br><span class="muted">Ranked by: {{ run.model_id }}{% if run.used_fallback %} (rule-based fallback, AI service unavailable){% endif %} · scoring {{ run.config_version }}</span>{% endwith %}</p>
+<div class="table-wrap"><table>
+  <tr><th>#</th><th>Score</th><th>Item</th><th>Why</th><th>Details</th><th></th></tr>
+  {% for rec in recommendations %}
+  <tr>
+    <td>{{ rec.rank }}</td>
+    <td><span class="score">{{ rec.score|floatformat:0 }}</span><div class="muted">/100</div></td>
+    <td><a href="{% url 'asset_detail' rec.asset.pk %}">{{ rec.asset.tag }}</a> {{ rec.asset.name }}
+      <div class="muted">{{ rec.asset.department }} · {{ rec.asset.get_condition_display }} · {{ rec.asset.quantity }} available</div></td>
+    <td>{{ rec.reason }}</td>
+    <td class="muted">Evidence coverage {{ rec.coverage }}</td>
+    <td class="row">
+      <form method="post" action="{% url 'recommendation_decide' rec.pk %}">{% csrf_token %}<input type="hidden" name="decision" value="accept"><button class="btn small">Accept</button></form>
+      <form method="post" action="{% url 'recommendation_decide' rec.pk %}">{% csrf_token %}<input type="hidden" name="decision" value="reject"><button class="btn small ghost">Reject</button></form>
+    </td>
+  </tr>
+  {% endfor %}
+</table></div>
+{% else %}<div class="card empty">No suggestions yet. Use the button to rank available surplus items, or browse the <a href="{% url 'marketplace' %}">marketplace</a>.<br>
+  If nothing listed fits, your request simply stays open: custodians and asset officers see it on their <strong>Wanted</strong> list, and you get a message as soon as a matching item is listed.</div>{% endif %}
+{% endif %}
+{% endblock %}

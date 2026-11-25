@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Sustainability · Circular Campus{% endblock %}
+{% block content %}
+<h1>Sustainability dashboard</h1>
+<p class="sub">{{ start|date:"d M Y" }} to {{ end|date:"d M Y" }} · {{ impact.transfers_completed }} completed transfer(s)</p>
+{% include "reports/_period.html" %}
+<div class="grid">
+  {% for key, m in impact.measures.items %}
+  <div class="card">
+    <div class="label">{{ m.label }}</div>
+    <div class="stat">{% if m.value is None %}<small>Not available</small>{% else %}{{ m.value|floatformat:"-2g" }} <small>{{ m.unit }}</small>{% endif %}</div>
+    {% if m.missing %}<div class="muted">{{ m.missing }} item(s) left out: no supporting data</div>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% if published %}
+<h2>Published summary</h2>
+<div class="card"><p>{{ published.text|linebreaksbr }}</p>
+  <p class="muted">Period {{ published.period_start|date:"d M Y" }} to {{ published.period_end|date:"d M Y" }}.
+  Drafted with AI from the system's figures, then reviewed and published by {{ published.published_by.display_name }} on {{ published.published_at|date:"d M Y" }}.</p></div>
+{% endif %}
+<h2>How each figure is calculated</h2>
+<div class="table-wrap"><table>
+  <tr><th>Measure</th><th>Formula</th><th>Source</th></tr>
+  {% for key, m in impact.measures.items %}<tr><td>{{ m.label }} ({{ m.unit }})</td><td>{{ m.formula }}</td><td>{{ m.source }}</td></tr>{% endfor %}
+</table></div>
+<p class="note">A figure is shown only where its supporting data exists. Items without a recorded cost, mass or approved carbon factor are left out, not estimated. All data in this prototype is fictional.</p>
+{% endblock %}

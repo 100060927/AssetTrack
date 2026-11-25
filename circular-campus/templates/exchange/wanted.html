@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Wanted · Circular Campus{% endblock %}
+{% block content %}
+<h1>Wanted</h1>
+<p class="sub">Open requests that have no item reserved yet. If your department has something that fits, register and publish it: the requester gets a message automatically.</p>
+{% if needs %}
+<div class="table-wrap"><table>
+  <tr><th>Request</th><th>Needed by department</th><th>Category</th><th>Still needed</th><th>Minimum condition</th><th>Required by</th><th>Waiting since</th></tr>
+  {% for r in needs %}
+  <tr>
+    <td><strong>{{ r.title }}</strong><div class="muted">{{ r.code }}{% if r.purpose %} · {{ r.purpose|truncatechars:70 }}{% endif %}</div></td>
+    <td>{{ r.department }}</td>
+    <td>{{ r.category|default:"Any" }}</td>
+    <td>{{ r.remaining_quantity }}</td>
+    <td>{{ r.get_min_condition_display }}</td>
+    <td>{{ r.required_date|date:"d M Y"|default:"-" }}</td>
+    <td>{{ r.created_at|date:"d M Y" }}</td>
+  </tr>
+  {% endfor %}
+</table></div>
+{% if user.role == 'CUSTODIAN' %}<p style="margin-top:14px"><a class="btn" href="{% url 'asset_create' %}">Register an item for one of these</a></p>{% endif %}
+{% else %}<div class="card empty">Every open request has an item reserved. Nothing is waiting.</div>{% endif %}
+{% endblock %}

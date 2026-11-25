@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Edit {{ asset.tag }} · Circular Campus{% endblock %}
+{% block content %}
+<h1>Edit {{ asset.tag }}</h1>
+<p class="sub">Correct the item's details. The old and new values are written into the item's history and the audit log, so nothing is silently overwritten. Items that are reserved or on their way cannot be edited until the hand-over ends.</p>
+<form method="post" class="card narrow">{% csrf_token %}
+  {% include "_form.html" %}
+  <button class="btn">Save changes</button>
+  <a class="btn ghost" href="{% url 'asset_detail' asset.pk %}">Cancel</a>
+</form>
+{% endblock %}

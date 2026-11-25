@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Summary: {{ draft.period_start|date:"d M Y" }} to {{ draft.period_end|date:"d M Y" }} <span class="badge {{ draft.status }}">{{ draft.get_status_display }}</span></h1>
+<h2>Verified figures (from the database)</h2>
+<div class="table-wrap"><table>
+  <tr><th>Measure</th><th>Value</th><th>Items without data</th></tr>
+  {% for key, m in draft.snapshot.measures.items %}
+  <tr><td>{{ m.label }}</td><td>{% if m.value is None %}Not available{% else %}{{ m.value|floatformat:"-2g" }} {{ m.unit }}{% endif %}</td><td>{{ m.items_without_data }}</td></tr>
+  {% endfor %}
+  <tr><td>Completed transfers</td><td>{{ draft.snapshot.transfers_completed }}</td><td></td></tr>
+  <tr><td>Requests submitted</td><td>{{ draft.snapshot.requests_submitted }}</td><td></td></tr>
+</table></div>
+<h2>Narrative</h2>
+<p class="note">AI-written text can be wrong and must be checked by a person.
+  Written by {{ draft.ai_run.model_id }}{% if draft.ai_run.used_fallback %} (template fallback: the AI service was unavailable){% endif %}.</p>
+{% if unverified %}<ul class="messages"><li class="error">Check these numbers: they are in the text but not in the verified figures: {{ unverified|join:", " }}</li></ul>{% endif %}
+{% if can_publish %}
+<form method="post" action="{% url 'summary_update' draft.pk %}" class="card">{% csrf_token %}
+  <div class="field"><label for="text">Edit before publishing</label><textarea id="text" name="text" rows="7">{{ draft.text }}</textarea></div>
+  <button class="btn ghost" name="action" value="save">Save edits</button>
+  <button class="btn" name="action" value="publish">Save and publish</button>
+</form>
+{% else %}
+<div class="card"><p>{{ draft.text|linebreaksbr }}</p>
+  {% if draft.status == 'PUBLISHED' %}<p class="muted">Published by {{ draft.published_by.display_name }} on {{ draft.published_at|date:"d M Y H:i" }}.</p>
+  {% else %}<p class="muted">Waiting for an administrator to review and publish.</p>{% endif %}</div>
+{% endif %}
+{% if draft.text != draft.ai_text %}<details class="card"><summary>Original AI wording</summary><p>{{ draft.ai_text|linebreaksbr }}</p></details>{% endif %}
+{% endblock %}

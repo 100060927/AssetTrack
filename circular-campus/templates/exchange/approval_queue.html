@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Approvals</h1>
+<p class="sub">Reserved items waiting for a decision. You cannot decide your own request.</p>
+{% if rows %}
+<div class="table-wrap"><table>
+  <tr><th>Request</th><th>Requester</th><th>Item</th><th>Qty</th><th>From → To</th><th>Decision</th></tr>
+  {% for row in rows %}{% with case=row.case res=row.case.reservation %}
+  <tr>
+    <td><a href="{% url 'request_detail' res.request.pk %}">{{ res.request.code }}</a><div class="muted">{{ res.request.title }}</div></td>
+    <td>{{ res.request.requester.display_name }}</td>
+    <td><a href="{% url 'asset_detail' res.asset.pk %}">{{ res.asset.tag }}</a> {{ res.asset.name }}</td>
+    <td>{{ res.quantity }}</td>
+    <td>{{ res.asset.department.code }} → {{ res.request.department.code }}</td>
+    <td>{% if row.can_decide %}
+      <form method="post" action="{% url 'approval_decide' case.pk %}" class="row">{% csrf_token %}
+        <input type="text" name="reason" placeholder="Reason (required to reject)" style="flex:1 1 170px">
+        <button class="btn small" name="decision" value="approve">Approve</button>
+        <button class="btn small danger" name="decision" value="reject">Reject</button>
+      </form>
+      {% else %}<span class="muted">Your own request. Another approver must decide.</span>{% endif %}</td>
+  </tr>
+  {% endwith %}{% endfor %}
+</table></div>
+{% else %}<div class="card empty">Nothing is waiting for approval.</div>{% endif %}
+{% endblock %}

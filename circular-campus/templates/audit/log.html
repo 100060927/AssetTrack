@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Audit log · Circular Campus{% endblock %}
+{% block content %}
+<div class="row spread"><h1>Audit log</h1>
+  <a class="btn ghost" href="?{{ request.GET.urlencode }}{% if request.GET %}&{% endif %}format=csv">Export CSV</a></div>
+<p class="sub">Every change in the system, in one place: items, requests, approvals, transfers, repairs, end of life, backups. Lines are only ever added, never edited or deleted.</p>
+<form method="get" class="card row end filters">
+  {% for field in form %}<div>{{ field.label_tag }}{{ field }}</div>{% endfor %}
+  <div style="flex:0 0 auto"><button class="btn">Search</button> <a class="btn ghost" href="{% url 'audit_log' %}">Clear</a></div>
+</form>
+<p class="muted">{{ total }} matching line{{ total|pluralize }}{% if total > 300 %}; showing the newest 300 (export CSV for all){% endif %}.</p>
+{% if entries %}
+<div class="table-wrap"><table>
+  <tr><th>When</th><th>Who</th><th>Action</th><th>Record</th><th>Details</th></tr>
+  {% for e in entries %}
+  <tr><td>{{ e.created_at|date:"d M Y H:i:s" }}</td>
+    <td>{% if e.actor %}{{ e.actor.display_name }}<div class="muted">{{ e.actor.get_role_display }}</div>{% else %}<span class="muted">System</span>{% endif %}</td>
+    <td>{{ e.action }}</td><td><span class="muted">{{ e.record_type }}</span><br>{{ e.record_label }}</td><td>{{ e.details }}</td></tr>
+  {% endfor %}
+</table></div>
+{% else %}<div class="card empty">Nothing matches.</div>{% endif %}
+{% endblock %}

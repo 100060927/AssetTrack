@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>AI report summaries</h1>
+<p class="sub">The database calculates the numbers. The AI only writes a short summary of them, and an administrator edits it before it is published.</p>
+{% include "reports/_period.html" with method="post" button="Generate draft summary" %}
+{% if drafts %}
+<div class="table-wrap"><table>
+  <tr><th>Period</th><th>Created</th><th>By</th><th>Written by</th><th>Status</th></tr>
+  {% for d in drafts %}
+  <tr><td><a href="{% url 'summary_detail' d.pk %}">{{ d.period_start|date:"d M Y" }} to {{ d.period_end|date:"d M Y" }}</a></td>
+    <td>{{ d.created_at|date:"d M Y H:i" }}</td><td>{{ d.created_by.display_name }}</td>
+    <td>{{ d.ai_run.model_id }}</td><td><span class="badge {{ d.status }}">{{ d.get_status_display }}</span></td></tr>
+  {% endfor %}
+</table></div>
+{% else %}<div class="card empty">No summaries yet.</div>{% endif %}
+{% endblock %}

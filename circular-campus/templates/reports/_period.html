@@ -1,0 +1,4 @@
+<form method="{{ method|default:'get' }}" class="card row end filters">{% if method == 'post' %}{% csrf_token %}{% endif %}
+  {% for field in form %}<div>{{ field.label_tag }}{{ field }}{{ field.errors }}</div>{% endfor %}
+  <div style="flex:0 0 auto"><button class="btn">{{ button|default:"Show" }}</button></div>
+</form>

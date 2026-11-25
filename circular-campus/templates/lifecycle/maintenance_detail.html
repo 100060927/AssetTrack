@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{{ task.code }} · Circular Campus{% endblock %}
+{% block content %}
+<h1>{{ task.code }} <span class="badge {{ task.state }}">{{ task.get_state_display }}</span></h1>
+<div class="card">
+  <dl class="facts">
+    <dt>Item</dt><dd><a href="{% url 'asset_detail' task.asset.pk %}">{{ task.asset.tag }}</a> {{ task.asset.name }} · {{ task.asset.department }} · <span class="badge {{ task.asset.state }}">{{ task.asset.get_state_display }}</span></dd>
+    <dt>Reported by</dt><dd>{{ task.reported_by.display_name }}, {{ task.created_at|date:"d M Y H:i" }}</dd>
+    <dt>Problem</dt><dd>{% if task.unsafe %}<strong>Reported unsafe.</strong> {% endif %}{{ task.description|linebreaksbr }}</dd>
+    {% if task.unsafe %}<dt>Blocked from</dt><dd>{% if task.blocked_from %}Taken out of use while it was {{ task.blocked_from|lower }}. Clearing it puts it back there.{% else %}Not blocked yet: the item is part of an exchange. Dispatch is refused, and it is blocked as soon as the exchange ends.{% endif %}</dd>{% endif %}
+    {% if task.state == 'CLOSED' %}
+    <dt>Result</dt><dd>{{ task.get_outcome_display|default:"-" }}</dd>
+    <dt>Findings</dt><dd>{{ task.findings|linebreaksbr }}</dd>
+    <dt>Repair</dt><dd>{{ task.repair_done|default:"-"|linebreaksbr }}</dd>
+    {% if show_repair_cost %}<dt>Repair cost</dt><dd>{% if task.repair_cost is not None %}AED {{ task.repair_cost }}{% else %}-{% endif %}</dd>{% endif %}
+    <dt>Inspected by</dt><dd>{{ task.inspected_by.display_name|default:"-" }}{% if task.closed_at %}, {{ task.closed_at|date:"d M Y H:i" }}{% endif %}</dd>
+    {% endif %}
+  </dl>
+</div>
+{% if can_work %}
+<h2>Record inspection and repair</h2>
+<form method="post" class="card narrow">{% csrf_token %}
+  {% include "_form.html" %}
+  <p class="muted">Safe or No fault found puts the item back where it was. Beyond repair keeps it blocked and asks the owner and asset officers to propose donation, recycling or disposal. Maintenance staff cannot dispose of items themselves.</p>
+  <button class="btn">Close task</button>
+</form>
+{% endif %}
+{% endblock %}

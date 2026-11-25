@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row spread"><h1>Requests and transfers</h1><a class="btn" href="?format=csv">Export CSV</a></div>
+{% if rows %}
+<div class="table-wrap"><table>
+  <tr><th>Request</th><th>Requester</th><th>Request status</th><th>Item</th><th>Qty</th><th>From → To</th><th>Transfer</th><th>Dispatched</th><th>Received</th></tr>
+  {% for r in rows %}
+  <tr><td>{{ r.request }}<div class="muted">{{ r.title }}</div></td><td>{{ r.requester }}</td><td>{{ r.request_state }}</td>
+    <td>{% if r.asset %}{{ r.asset }} {{ r.item }}{% else %}<span class="muted">-</span>{% endif %}</td><td>{{ r.quantity|default:r.requested_qty }}</td><td>{% if r.from_department %}{{ r.from_department }} → {% endif %}{{ r.to_department }}</td>
+    <td>{{ r.transfer }} {{ r.transfer_state }}</td><td>{{ r.dispatched_at|date:"d M Y H:i" }}</td><td>{{ r.received_at|date:"d M Y H:i" }}</td></tr>
+  {% endfor %}
+</table></div>
+{% else %}<div class="card empty">No requests yet.</div>{% endif %}
+{% endblock %}

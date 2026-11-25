@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Backup · Circular Campus{% endblock %}
+{% block content %}
+<div class="row spread"><h1>Backup and restore</h1>
+  <form method="post" action="{% url 'backup_create' %}">{% csrf_token %}<button class="btn">Back up now</button></form></div>
+<p class="sub">A backup saves every record (users, items, requests, history, audit log, AI runs) in one file in the <code>{{ folder.name }}</code> folder next to <code>manage.py</code>. Copy these files somewhere safe, such as a USB drive or cloud folder.</p>
+{% if backups %}
+<div class="table-wrap"><table>
+  <tr><th>File</th><th>Saved</th><th>Size</th><th></th></tr>
+  {% for b in backups %}
+  <tr><td>{{ b.name }}</td><td>{{ b.created|date:"d M Y H:i:s" }}</td><td>{{ b.size_kb }} KB</td>
+    <td><a class="btn small ghost" href="{% url 'backup_download' b.name %}">Download</a></td></tr>
+  {% endfor %}
+</table></div>
+<h2>Restore</h2>
+<form method="post" action="{% url 'backup_restore' %}" class="card narrow">{% csrf_token %}
+  <p class="note">Restoring <strong>replaces all current data</strong> with the chosen backup. The system first saves a safety copy of the current data, then loads the backup and checks that every record count matches. If anything fails, the old data is put back. Everyone, including you, is signed out afterwards.</p>
+  <div class="field"><label for="id_name">Backup to restore</label>
+    <select name="name" id="id_name">{% for b in backups %}<option value="{{ b.name }}">{{ b.name }}</option>{% endfor %}</select></div>
+  <div class="field"><label for="id_confirm">Type RESTORE to confirm</label><input type="text" name="confirm" id="id_confirm" autocomplete="off" required></div>
+  <button class="btn danger">Restore this backup</button>
+</form>
+{% else %}<div class="card empty">No backups yet. Use “Back up now”.</div>{% endif %}
+{% endblock %}
