@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Maintenance · Circular Campus{% endblock %}
+{% block content %}
+<div class="row spread"><h1>Maintenance</h1>
+  <div class="row"><a class="btn {% if show != 'open' %}ghost{% endif %}" href="?show=open">Open</a><a class="btn {% if show != 'all' %}ghost{% endif %}" href="?show=all">All</a></div></div>
+<p class="sub">Problems reported on items. Anyone can report a problem from an item's page. Maintenance staff inspect, repair and record the result{% if user.role == 'CUSTODIAN' %}; you see problems on <strong>{{ user.department.name }}</strong> items and the ones you reported{% elif user.role == 'REQUESTER' %}; you see the problems you reported{% endif %}.</p>
+{% if tasks %}
+<div class="table-wrap"><table>
+  <tr><th>Task</th><th>Item</th><th>Problem</th><th>Reported</th><th>Status</th><th>Result</th></tr>
+  {% for t in tasks %}
+  <tr><td><a href="{% url 'maintenance_detail' t.pk %}">{{ t.code }}</a></td>
+    <td><a href="{% url 'asset_detail' t.asset.pk %}">{{ t.asset.tag }}</a> {{ t.asset.name }}<div class="muted">{{ t.asset.department.code }} · <span class="badge {{ t.asset.state }}">{{ t.asset.get_state_display }}</span></div></td>
+    <td>{% if t.unsafe %}<span class="badge BLOCKED">Unsafe</span> {% endif %}{{ t.description|truncatechars:100 }}</td>
+    <td>{{ t.created_at|date:"d M Y" }}<div class="muted">{{ t.reported_by.display_name }}</div></td>
+    <td><span class="badge {{ t.state }}">{{ t.get_state_display }}</span></td>
+    <td>{{ t.get_outcome_display|default:"-" }}{% if t.inspected_by %}<div class="muted">{{ t.inspected_by.display_name }}</div>{% endif %}</td></tr>
+  {% endfor %}
+</table></div>
+{% else %}<div class="card empty">No {% if show == 'open' %}open {% endif %}maintenance tasks{% if show == 'open' %} (click <strong>All</strong> to see closed ones){% endif %}.<br>
+  A task appears here when someone opens an item and uses <strong>Report a problem with this item</strong>.</div>{% endif %}
+{% endblock %}

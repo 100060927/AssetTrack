@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}{{ asset.tag }} · Circular Campus{% endblock %}
+{% block content %}
+<div class="row spread">
+  <h1>{{ asset.name }} <span class="badge {{ asset.state }}">{{ asset.get_state_display }}</span></h1>
+  <div class="row">
+    {% if can_manage and asset.state == 'RECORDED' %}
+      <form method="post" action="{% url 'asset_action' asset.pk 'publish' %}">{% csrf_token %}<button class="btn">Publish as surplus</button></form>
+    {% elif can_manage and asset.state == 'IN_USE' %}
+      <form method="post" action="{% url 'asset_action' asset.pk 'publish' %}">{% csrf_token %}<button class="btn">Declare surplus</button></form>
+    {% elif can_manage and asset.state == 'AVAILABLE' %}
+      <form method="post" action="{% url 'asset_action' asset.pk 'withdraw' %}">{% csrf_token %}<button class="btn ghost">Withdraw listing</button></form>
+    {% endif %}
+    {% if can_offer_back %}<details class="mini"><summary class="btn ghost">I no longer need this</summary>
+      <form method="post" action="{% url 'asset_action' asset.pk 'offer-back' %}" class="stack">{% csrf_token %}
+        <input type="text" name="note" placeholder="Optional note, e.g. project finished">
+        <button class="btn small">Tell my custodian</button></form></details>{% endif %}
+    {% if can_edit %}<a class="btn ghost" href="{% url 'asset_edit' asset.pk %}">Edit details</a>{% endif %}
+    {% if can_request %}<a class="btn" href="{% url 'request_create' %}?asset={{ asset.pk }}">Request this item</a>{% endif %}
+  </div>
+</div>
+<div class="card">
+  <dl class="facts">
+    <dt>Tag</dt><dd>{{ asset.tag }}{% if asset.is_fictional %} <span class="badge">Fictional test data</span>{% endif %}</dd>
+    <dt>Description</dt><dd>{{ asset.description|default:"-"|linebreaksbr }}</dd>
+    <dt>Category</dt><dd>{{ asset.category }}</dd>
+    <dt>Condition</dt><dd>{{ asset.get_condition_display }}</dd>
+    <dt>Tags</dt><dd>{{ asset.tags|default:"-" }}</dd>
+    <dt>Quantity</dt><dd>{{ asset.quantity }}</dd>
+    <dt>Department</dt><dd>{{ asset.department }}</dd>
+    <dt>Owner</dt><dd>{{ asset.owner.display_name }}</dd>
+    <dt>Location</dt><dd>{{ asset.location|default:"-" }}</dd>
+    <dt>Mass per unit</dt><dd>{% if asset.unit_mass_kg is not None %}{{ asset.unit_mass_kg }} kg{% else %}Not recorded{% endif %}</dd>
+    {% if show_cost %}<dt>Replacement cost per unit</dt><dd>{% if asset.replacement_unit_cost is not None %}AED {{ asset.replacement_unit_cost|floatformat:2 }}{% else %}Not recorded{% endif %}</dd>{% endif %}
+  </dl>
+</div>
+{% if can_advise or advice %}
+<div class="row spread"><h2>Sustainable-action advice</h2>
+  {% if can_advise %}<form method="post" action="{% url 'asset_action' asset.pk 'advise' %}">{% csrf_token %}<button class="btn ghost">{% if advice %}Ask again{% else %}Get advice{% endif %}</button></form>{% endif %}</div>
+{% if advice %}
+<div class="card">
+  <div class="row spread"><div><span class="label">Suggested action</span><div class="stat">{{ advice.get_action_display }}</div></div>
+    <span class="badge {% if advice.decision == 'ACCEPTED' %}APPROVED{% elif advice.decision == 'DISMISSED' %}CANCELLED{% else %}DRAFT{% endif %}">{{ advice.get_decision_display }}</span></div>
+  <ul>{% for reason in advice.reasons %}<li>{{ reason }}</li>{% endfor %}</ul>
+  <p class="label">If this item stays in use (calculated by the system's own formulas, not by the AI):</p>
+  <dl class="facts">
+    {% if show_cost %}<dt>Replacement cost avoided</dt><dd>{% if advice.impact.replacement_cost_aed is None %}Not available{% else %}AED {{ advice.impact.replacement_cost_aed|floatformat:"2g" }}{% endif %}</dd>{% endif %}
+    <dt>Waste diverted</dt><dd>{% if advice.impact.waste_diverted_kg is None %}Not available{% else %}{{ advice.impact.waste_diverted_kg|floatformat:"-2g" }} kg{% endif %}</dd>
+    <dt>Estimated carbon benefit</dt><dd>{% if advice.impact.co2e_kg is None %}Not available{% else %}{{ advice.impact.co2e_kg|floatformat:"-2g" }} kg CO2e{% endif %}</dd>
+  </dl>
+  <p class="note" style="margin-top:12px">AI advice can be wrong. You decide; accepting only records your decision in the history. Donation, recycling and disposal still need an authorized officer's approval.
+    <br><span class="muted">Advised by: {{ advice.ai_run.model_id }}{% if advice.ai_run.used_fallback %} (rule-based fallback, AI service unavailable){% endif %}</span></p>
+  {% if advice.decision == 'PENDING' and can_advise %}<div class="row">
+    <form method="post" action="{% url 'asset_action' asset.pk 'advice-accept' %}">{% csrf_token %}<button class="btn small">Accept advice</button></form>
+    <form method="post" action="{% url 'asset_action' asset.pk 'advice-dismiss' %}">{% csrf_token %}<button class="btn small ghost">Dismiss</button></form></div>{% endif %}
+</div>
+{% else %}<div class="card empty">No advice yet.</div>{% endif %}
+{% endif %}
+{% if open_task or proposal %}
+<div class="card">
+  {% if open_task %}<p><strong>Maintenance:</strong> <a href="{% url 'maintenance_detail' open_task.pk %}">{{ open_task.code }}</a> is open{% if open_task.unsafe %} and the item is reported <strong>unsafe</strong>{% endif %}. {{ open_task.description|truncatechars:140 }}</p>{% endif %}
+  {% if proposal %}<p><strong>End of life:</strong> {{ proposal.code }} · {{ proposal.get_action_display }} · <span class="badge {{ proposal.state }}">{{ proposal.get_state_display }}</span>
+    {% if proposal.recipient %} · to {{ proposal.recipient }}{% endif %}{% if proposal.evidence %} · evidence: {{ proposal.evidence }}{% endif %}
+    {% if user.role != 'REQUESTER' and user.role != 'MAINTENANCE' %} · <a href="{% url 'eol_list' %}">open the end-of-life page</a>{% endif %}</p>{% endif %}
+</div>
+{% endif %}
+
+<div class="row" style="align-items:flex-start">
+{% if can_report_defect %}
+<details class="card" style="flex:1 1 300px"><summary><strong>Report a problem with this item</strong></summary>
+  <form method="post" action="{% url 'defect_report' asset.pk %}" style="margin-top:10px">{% csrf_token %}
+    <div class="field">{{ defect_form.description.label_tag }}{{ defect_form.description }}</div>
+    <div class="field check-row">{{ defect_form.unsafe }}{{ defect_form.unsafe.label_tag }}</div>
+    <p class="muted">Maintenance staff and the item's owner are told. An unsafe item is blocked so nobody can reserve or use it until it is checked.</p>
+    <button class="btn small danger">Send report</button></form>
+</details>
+{% endif %}
+{% if can_propose %}
+<details class="card" style="flex:1 1 300px"><summary><strong>Propose donation, recycling or disposal</strong></summary>
+  <form method="post" action="{% url 'eol_propose' asset.pk %}" style="margin-top:10px">{% csrf_token %}
+    {% include "_form.html" with form=proposal_form %}
+    <p class="muted">Another asset officer must approve it. A listed item is taken off the marketplace while the proposal is reviewed.</p>
+    <button class="btn small">Send for approval</button></form>
+</details>
+{% endif %}
+</div>
+
+{% if tasks %}
+<h2>Maintenance</h2>
+<div class="table-wrap"><table>
+  <tr><th>Task</th><th>Reported</th><th>Problem</th><th>Status</th><th>Result</th></tr>
+  {% for t in tasks %}<tr><td><a href="{% url 'maintenance_detail' t.pk %}">{{ t.code }}</a></td>
+    <td>{{ t.created_at|date:"d M Y" }} by {{ t.reported_by.display_name }}</td>
+    <td>{% if t.unsafe %}<strong>Unsafe.</strong> {% endif %}{{ t.description|truncatechars:90 }}</td>
+    <td><span class="badge {{ t.state }}">{{ t.get_state_display }}</span></td>
+    <td>{{ t.get_outcome_display|default:"-" }}{% if show_repair_cost and t.repair_cost is not None %} · AED {{ t.repair_cost }}{% endif %}</td></tr>{% endfor %}
+</table></div>
+{% endif %}
+
+<h2>History</h2>
+<div class="table-wrap"><table>
+  <tr><th>When</th><th>Who</th><th>Action</th><th>Status change</th><th>Note</th></tr>
+  {% for e in events %}
+  <tr><td>{{ e.created_at|date:"d M Y H:i" }}</td><td>{% if e.actor %}{{ e.actor.display_name }}{% else %}<span class="muted">System</span>{% endif %}</td><td>{{ e.action }}</td>
+    <td>{% if e.from_state and e.from_state != e.to_state %}{{ e.from_label }} → {{ e.to_label }}{% else %}{{ e.to_label }}{% endif %}</td>
+    <td>{{ e.note }}</td></tr>
+  {% endfor %}
+</table></div>
+{% endblock %}

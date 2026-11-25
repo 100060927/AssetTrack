@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Sign in · Circular Campus{% endblock %}
+{% block anon %}
+<div class="login">
+  <h1>Circular Campus</h1>
+  <p class="sub">Campus resource exchange and asset life cycle</p>
+  <div class="card">
+    <form method="post">{% csrf_token %}
+      {% include "_form.html" %}
+      <input type="hidden" name="next" value="{{ next }}">
+      <button class="btn">Sign in</button>
+    </form>
+  </div>
+  <div class="note demo">
+    <strong>Demo accounts</strong> (fictional data, password <code>campus123</code>)
+    <table>
+      <tr><th>User</th><th>Role</th></tr>
+      <tr><td>sara</td><td>Requester, Computer Science</td></tr>
+      <tr><td>omar</td><td>Custodian, Engineering</td></tr>
+      <tr><td>layla</td><td>Approver (asset officer)</td></tr>
+      <tr><td>admin</td><td>System administrator</td></tr>
+    </table>
+  </div>
+</div>
+{% endblock %}

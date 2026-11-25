@@ -1,0 +1,19 @@
+{% if assets %}
+<div class="items">
+  {% for a in assets %}
+  <a class="item" href="{% url 'asset_detail' a.pk %}">
+    <div class="thumb t{{ a.category_id|stringformat:'d'|last }}">
+      {% if show_state %}<span class="badge {{ a.state }}">{{ a.get_state_display }}</span>{% endif %}
+      <span class="qty">{{ a.quantity }} unit{{ a.quantity|pluralize }}</span>
+      {% include "_icons.html" with i="box" %}
+    </div>
+    <div class="body">
+      <span class="name">{{ a.name }}</span>
+      <span class="meta">{{ a.category }} · {{ a.get_condition_display }}</span>
+      <span class="meta">{{ a.description|truncatechars:60 }}</span>
+      <span class="foot"><span>{{ a.department }}</span><span>{{ a.tag }}</span></span>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}<div class="card empty">{{ empty|default:"Nothing to show." }}</div>{% endif %}

@@ -1,0 +1,10 @@
+{% if requests %}
+<div class="table-wrap"><table>
+  <tr><th>Request</th><th>Need</th><th>Qty</th><th>Received</th><th>Submitted</th><th>Status</th></tr>
+  {% for r in requests %}
+  <tr><td><a href="{% url 'request_detail' r.pk %}">{{ r.code }}</a></td><td>{{ r.title }}</td>
+    <td>{{ r.quantity }}</td><td>{{ r.received_quantity }}</td><td>{{ r.created_at|date:"d M Y" }}</td>
+    <td><span class="badge {{ r.state }}">{{ r.get_state_display }}</span></td></tr>
+  {% endfor %}
+</table></div>
+{% else %}<div class="card empty">You have no requests yet.</div>{% endif %}

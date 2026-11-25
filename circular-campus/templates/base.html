@@ -1,0 +1,89 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Circular Campus{% endblock %}</title>
+<link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body>
+{% if user.is_authenticated %}{% with here=request.resolver_match.url_name %}
+<div class="shell">
+<aside class="side">
+  <a class="brand" href="{% url 'home' %}"><span class="logo">{% include "_icons.html" with i="recycle" %}</span>Circular Campus</a>
+  <nav class="main">
+    <a href="{% url 'home' %}" class="{% if here == 'home' %}on{% endif %}">{% include "_icons.html" with i="home" %}Dashboard</a>
+    <a href="{% url 'marketplace' %}" class="{% if here == 'marketplace' %}on{% endif %}">{% include "_icons.html" with i="box" %}Marketplace</a>
+    {% if user.role != 'ADMIN' and user.role != 'MAINTENANCE' %}<a href="{% url 'request_list' %}" class="{% if here == 'request_list' or here == 'request_detail' or here == 'request_create' %}on{% endif %}">{% include "_icons.html" with i="list" %}My requests</a>{% endif %}
+    {% if user.role != 'ADMIN' %}<a href="{% url 'my_items' %}" class="{% if here == 'my_items' %}on{% endif %}">{% include "_icons.html" with i="folder" %}My items</a>{% endif %}
+    <a href="{% url 'assistant' %}" class="{% if here == 'assistant' %}on{% endif %}">{% include "_icons.html" with i="chat" %}Assistant</a>
+    {% if user.role == 'CUSTODIAN' %}
+      <span class="group">Department</span>
+      <a href="{% url 'inventory' %}" class="{% if here == 'inventory' or here == 'asset_create' %}on{% endif %}">{% include "_icons.html" with i="folder" %}Department assets</a>
+      <a href="{% url 'transfer_queue' %}" class="{% if here == 'transfer_queue' %}on{% endif %}">{% include "_icons.html" with i="truck" %}Transfers</a>
+    {% endif %}
+    {% if user.role == 'APPROVER' or user.role == 'ADMIN' %}
+      <span class="group">Campus</span>
+      <a href="{% url 'all_assets' %}" class="{% if here == 'all_assets' %}on{% endif %}">{% include "_icons.html" with i="folder" %}All assets</a>
+    {% endif %}
+    {% if user.role == 'APPROVER' %}
+      <span class="group">Review</span>
+      <a href="{% url 'approval_queue' %}" class="{% if here == 'approval_queue' %}on{% endif %}">{% include "_icons.html" with i="check" %}Approvals</a>
+    {% endif %}
+    {% if user.role == 'APPROVER' or user.role == 'ADMIN' %}
+      <a href="{% url 'holds' %}" class="{% if here == 'holds' %}on{% endif %}">{% include "_icons.html" with i="clock" %}Holds</a>
+    {% endif %}
+    {% if user.role == 'CUSTODIAN' or user.role == 'APPROVER' or user.role == 'ADMIN' %}
+      <a href="{% url 'dispute_list' %}" class="{% if here == 'dispute_list' %}on{% endif %}">{% include "_icons.html" with i="alert" %}Delivery problems</a>
+    {% endif %}
+    <span class="group">Life cycle</span>
+      <a href="{% url 'maintenance_list' %}" class="{% if here == 'maintenance_list' or here == 'maintenance_detail' %}on{% endif %}">{% include "_icons.html" with i="wrench" %}{% if user.role == 'REQUESTER' %}My problem reports{% else %}Maintenance{% endif %}</a>
+      {% if user.role == 'CUSTODIAN' or user.role == 'APPROVER' or user.role == 'ADMIN' %}<a href="{% url 'eol_list' %}" class="{% if here == 'eol_list' %}on{% endif %}">{% include "_icons.html" with i="recycle" %}End of life</a>{% endif %}
+    {% if user.role == 'CUSTODIAN' or user.role == 'APPROVER' or user.role == 'ADMIN' %}
+      <a href="{% url 'wanted' %}" class="{% if here == 'wanted' %}on{% endif %}">{% include "_icons.html" with i="flag" %}Wanted</a>
+    {% endif %}
+    <span class="group">Insights</span>
+    {% if user.role == 'CUSTODIAN' or user.role == 'APPROVER' or user.role == 'ADMIN' %}
+      <a href="{% url 'movements' %}" class="{% if here == 'movements' %}on{% endif %}">{% include "_icons.html" with i="truck" %}Asset movements</a>
+    {% endif %}
+    <a href="{% url 'dashboard' %}" class="{% if here == 'dashboard' %}on{% endif %}">{% include "_icons.html" with i="leaf" %}Sustainability</a>
+    {% if user.role == 'APPROVER' or user.role == 'ADMIN' %}
+      <a href="{% url 'report' %}" class="{% if here == 'report' %}on{% endif %}">{% include "_icons.html" with i="chart" %}Report</a>
+      <a href="{% url 'summaries' %}" class="{% if here == 'summaries' or here == 'summary_detail' %}on{% endif %}">{% include "_icons.html" with i="spark" %}AI summaries</a>
+    {% endif %}
+    {% if user.role == 'APPROVER' or user.role == 'ADMIN' %}
+      <span class="group">Records</span>
+      <a href="{% url 'audit_log' %}" class="{% if here == 'audit_log' %}on{% endif %}">{% include "_icons.html" with i="list" %}Audit log</a>
+    {% endif %}
+    {% if user.role == 'ADMIN' %}<a href="{% url 'backup' %}" class="{% if here == 'backup' %}on{% endif %}">{% include "_icons.html" with i="database" %}Backup</a>{% endif %}
+    <a href="{% url 'notifications' %}" class="{% if here == 'notifications' %}on{% endif %}">{% include "_icons.html" with i="bell" %}Notifications{% if unread_count %}<span class="count">{{ unread_count }}</span>{% endif %}</a>
+  </nav>
+  <div class="who">
+    <strong>{{ user.display_name }}</strong>
+    <span>{{ user.get_role_display }}{% if user.department %} · {{ user.department.code }}{% endif %}</span>
+    <a class="linklike" href="{% url 'password_change' %}">Change password</a>
+    <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="linklike">Sign out</button></form>
+  </div>
+</aside>
+<div class="page">
+  <div class="topbar">
+    <form method="get" action="{% url 'marketplace' %}">{% include "_icons.html" with i="search" %}
+      <input type="text" name="q" placeholder="Search surplus items…" aria-label="Search surplus items" value="{% if here == 'marketplace' %}{{ request.GET.q }}{% endif %}"></form>
+    <span class="spacer"></span>
+    {% if user.role == 'CUSTODIAN' %}<a class="btn ghost" href="{% url 'asset_create' %}">Register asset</a>{% endif %}
+    {% if user.role != 'ADMIN' and user.role != 'MAINTENANCE' %}<a class="btn" href="{% url 'request_create' %}">New request</a>{% endif %}
+  </div>
+  <main>
+    {% if messages %}<ul class="messages">{% for m in messages %}<li class="{{ m.tags }}">{{ m }}</li>{% endfor %}</ul>{% endif %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
+</div>
+{% endwith %}{% else %}
+<div class="plain"><main>
+  {% if messages %}<ul class="messages">{% for m in messages %}<li class="{{ m.tags }}">{{ m }}</li>{% endfor %}</ul>{% endif %}
+  {% block anon %}{% endblock %}
+</main></div>
+{% endif %}
+</body>
+</html>

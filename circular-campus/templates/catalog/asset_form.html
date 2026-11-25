@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Register an asset</h1>
+<p class="sub">The asset is recorded for <strong>{{ user.department.name }}</strong> with status Recorded. Publish it to list it as surplus.</p>
+{% if suggestion %}
+<p class="note"><strong>AI suggestion</strong> (confidence {{ suggestion.confidence }}):
+  category <strong>{{ suggestion.category|default:"none found" }}</strong> ·
+  condition <strong>{{ suggestion.condition_label }}</strong> ·
+  tags <strong>{{ suggestion.tags|default:"none" }}</strong>.
+  The fields below were filled in for you. AI can be wrong: check them and change anything before you register.
+  <br><span class="muted">Suggested by: {{ suggestion.run.model_id }}{% if suggestion.run.used_fallback %} (rule-based fallback, AI service unavailable){% endif %}</span></p>
+{% endif %}
+<form method="post" class="card narrow">{% csrf_token %}
+  {% include "_form.html" %}
+  <input type="hidden" name="ai_run" value="{% if suggestion %}{{ suggestion.run.pk }}{% else %}{{ ai_run }}{% endif %}">
+  <button class="btn">Register</button>
+  <button class="btn ghost" name="action" value="suggest" formnovalidate>Suggest category, condition and tags</button>
+  <a class="btn ghost" href="{% url 'inventory' %}">Cancel</a>
+</form>
+{% endblock %}

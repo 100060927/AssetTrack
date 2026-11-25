@@ -1,0 +1,5 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row spread"><h1>My requests</h1><a class="btn" href="{% url 'request_create' %}">New request</a></div>
+{% include "exchange/_request_table.html" %}
+{% endblock %}

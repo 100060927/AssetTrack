@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Asset movements · Circular Campus{% endblock %}
+{% block content %}
+<div class="row spread"><h1>Asset movements</h1>
+  <a class="btn ghost" href="?{{ request.GET.urlencode }}{% if request.GET %}&{% endif %}format=csv">Export CSV</a></div>
+<p class="sub">{% if all_departments %}Who took which assets, across all departments.{% else %}Who took assets from <strong>{{ user.department.name }}</strong>.{% endif %}
+  Only hand-overs the receiver has confirmed are counted.</p>
+
+<form method="get" class="card row end filters">
+  {% for field in form %}<div>{{ field.label_tag }}{{ field }}</div>{% endfor %}
+  <div style="flex:0 0 auto"><button class="btn">Show</button> <a class="btn ghost" href="{% url 'movements' %}">Clear</a></div>
+</form>
+
+<div class="tiles">
+  <div class="tile"><span class="ico t0">{% include "_icons.html" with i="box" %}</span><span><span class="stat">{{ totals.units|default:0 }}</span><br><span class="label">units taken</span></span></div>
+  <div class="tile"><span class="ico t4">{% include "_icons.html" with i="truck" %}</span><span><span class="stat">{{ totals.transfers }}</span><br><span class="label">hand-overs</span></span></div>
+  <div class="tile"><span class="ico t1">{% include "_icons.html" with i="folder" %}</span><span><span class="stat">{{ totals.departments }}</span><br><span class="label">departments took items</span></span></div>
+  <div class="tile"><span class="ico t2">{% include "_icons.html" with i="list" %}</span><span><span class="stat">{% if totals.value is not None %}{{ totals.value|floatformat:"0g" }}{% else %}-{% endif %}</span><br><span class="label">AED replacement value{% if totals.value is None %} (not recorded){% endif %}</span></span></div>
+</div>
+
+{% if rows %}
+<h2>By department</h2>
+<div class="table-wrap"><table>
+  <tr><th>Department that took them</th><th>Hand-overs</th><th>Units</th><th>Value (AED)</th><th>Last received</th></tr>
+  {% for d in by_department %}
+  <tr><td>{{ d.to_department__name }}</td><td>{{ d.transfers }}</td><td><strong>{{ d.units }}</strong></td>
+    <td>{% if d.value is not None %}{{ d.value|floatformat:"2g" }}{% else %}-{% endif %}</td><td>{{ d.last|date:"d M Y" }}</td></tr>
+  {% endfor %}
+</table></div>
+
+<h2>By person</h2>
+<div class="table-wrap"><table>
+  <tr><th>Person who took them</th><th>Their department</th><th>Hand-overs</th><th>Units</th><th>Value (AED)</th><th>Last received</th></tr>
+  {% for p in by_person %}
+  <tr><td>{% if p.received_by__first_name %}{{ p.received_by__first_name }} {{ p.received_by__last_name }}{% else %}{{ p.received_by__username }}{% endif %}</td>
+    <td>{{ p.to_department__name }}</td><td>{{ p.transfers }}</td><td><strong>{{ p.units }}</strong></td>
+    <td>{% if p.value is not None %}{{ p.value|floatformat:"2g" }}{% else %}-{% endif %}</td><td>{{ p.last|date:"d M Y" }}</td></tr>
+  {% endfor %}
+</table></div>
+
+<h2>Every hand-over</h2>
+<div class="table-wrap"><table>
+  <tr><th>Received</th><th>Item</th><th>Qty</th><th>From</th><th>To</th><th>Taken by</th><th>Request</th></tr>
+  {% for t in rows %}
+  <tr><td style="white-space:nowrap">{{ t.received_at|date:"d M Y H:i" }}</td>
+    <td><a href="{% url 'asset_detail' t.reservation.asset.pk %}">{{ t.reservation.asset.tag }}</a> {{ t.reservation.asset.name }}</td>
+    <td>{{ t.received_qty }}</td><td>{{ t.from_department }}</td><td>{{ t.to_department }}</td>
+    <td>{{ t.received_by.display_name }}</td><td style="white-space:nowrap">{{ t.reservation.request.code }}</td></tr>
+  {% endfor %}
+</table></div>
+{% else %}<div class="card empty">No confirmed hand-overs match these filters.</div>{% endif %}
+{% endblock %}

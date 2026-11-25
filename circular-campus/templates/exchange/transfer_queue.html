@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Transfers from {{ user.department.name }}</h1>
+{% if transfers %}
+<div class="table-wrap"><table>
+  <tr><th>Transfer</th><th>Item</th><th>Qty</th><th>To</th><th>Receiver</th><th>Status</th><th></th></tr>
+  {% for t in transfers %}
+  <tr>
+    <td>{{ t.code }}</td>
+    <td><a href="{% url 'asset_detail' t.reservation.asset.pk %}">{{ t.reservation.asset.tag }}</a> {{ t.reservation.asset.name }}</td>
+    <td>{{ t.reservation.quantity }}</td><td>{{ t.to_department }}</td>
+    <td>{{ t.reservation.request.requester.display_name }}</td>
+    <td><span class="badge {{ t.state }}">{{ t.get_state_display }}</span></td>
+    <td>{% if t.state == 'READY' %}<form method="post" action="{% url 'transfer_dispatch' t.pk %}">{% csrf_token %}<button class="btn small">Dispatch</button></form>
+      {% else %}<span class="muted">Waiting for receipt</span>{% endif %}</td>
+  </tr>
+  {% endfor %}
+</table></div>
+{% else %}<div class="card empty">No approved transfers to dispatch.</div>{% endif %}
+{% endblock %}

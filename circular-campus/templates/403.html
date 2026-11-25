@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Not allowed · Circular Campus{% endblock %}
+{% block content %}
+<h1>403 · Not allowed</h1>
+<div class="card">
+  <p>Your role ({% if user.is_authenticated %}{{ user.get_role_display }}{% else %}not signed in{% endif %}) does not have permission to open this page or do this action.</p>
+  <p class="muted">The server checks every page and action, so typing the address directly does not get around it.</p>
+  <p><a class="btn" href="{% url 'home' %}">Back to the dashboard</a></p>
+</div>
+{% endblock %}
+{% block anon %}<h1>403 · Not allowed</h1><p><a href="{% url 'login' %}">Sign in</a></p>{% endblock %}

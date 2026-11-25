@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Marketplace · Circular Campus{% endblock %}
+{% block content %}
+<h1>Surplus marketplace</h1>
+<p class="sub">Items other departments have published for reuse.</p>
+<form method="get" class="card row end filters">
+  {% for field in form %}<div>{{ field.label_tag }}{{ field }}</div>{% endfor %}
+  <div style="flex:0 0 auto"><button class="btn">Search</button> <a class="btn ghost" href="{% url 'marketplace' %}">Clear</a></div>
+</form>
+<p class="muted">{{ assets|length }} listing(s)</p>
+{% include "catalog/_asset_cards.html" with empty="No available item matches these filters." %}
+{% endblock %}

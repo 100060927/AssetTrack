@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Delivery problems · Circular Campus{% endblock %}
+{% block content %}
+<h1>Delivery problems</h1>
+<p class="sub">When the wrong item, a damaged item or too few units arrive, the receiver reports it instead of confirming receipt. Ownership does not change while the problem is open. An asset officer who is not the requester resolves it.</p>
+{% if rows %}
+<div class="table-wrap"><table>
+  <tr><th>Transfer</th><th>Item</th><th>Problem</th><th>Status</th><th>Resolution</th></tr>
+  {% for row in rows %}{% with t=row.t %}
+  <tr><td>{{ t.code }}<div class="muted">{{ t.from_department.code }} → {{ t.to_department.code }}</div></td>
+    <td><a href="{% url 'asset_detail' t.reservation.asset.pk %}">{{ t.reservation.asset.tag }}</a> {{ t.reservation.asset.name }}<div class="muted">For <a href="{% url 'request_detail' t.reservation.request.pk %}">{{ t.reservation.request.code }}</a>, {{ t.reservation.request.requester.display_name }}</div></td>
+    <td><strong>{{ t.get_problem_display }}</strong>: {{ t.problem_note }}</td>
+    <td><span class="badge {{ t.state }}">{{ t.get_state_display }}</span></td>
+    <td>{% if row.can_resolve %}
+      <form method="post" action="{% url 'dispute_resolve' t.pk %}" class="stack">{% csrf_token %}
+        <select name="resolution" aria-label="Resolution">{% for value, label in resolutions %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select>
+        <input type="text" name="note" placeholder="What was found" required>
+        <button class="btn small">Resolve</button></form>
+      {% elif t.resolution %}{{ t.get_resolution_display }}<div class="muted">{{ t.resolved_by.display_name }}: {{ t.resolution_note }}</div>
+      {% else %}<span class="muted">Waiting for an asset officer</span>{% endif %}</td></tr>
+  {% endwith %}{% endfor %}
+</table></div>
+<p class="note" style="margin-top:12px"><strong>Received after all</strong>: ownership moves to the requester as normal. <strong>Returned</strong>: the item goes back on the marketplace, a damaged item goes to maintenance first, and the request reopens. <strong>Lost</strong>: the item is written off (Terminal) and the request reopens.</p>
+{% else %}<div class="card empty">No delivery problems have been reported.</div>{% endif %}
+{% endblock %}

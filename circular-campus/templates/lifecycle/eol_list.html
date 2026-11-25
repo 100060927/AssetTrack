@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}End of life · Circular Campus{% endblock %}
+{% block content %}
+<h1>End of life</h1>
+<p class="sub">Donation, recycling and disposal. A custodian or asset officer proposes it from the item's page, a <strong>different</strong> asset officer approves it, then the hand-over is recorded with evidence. Only then does the item close for good (Terminal).</p>
+{% if rows %}
+<div class="table-wrap"><table>
+  <tr><th>Proposal</th><th>Item</th><th>Action and reason</th><th>Status</th><th>Next step</th></tr>
+  {% for row in rows %}{% with p=row.p %}
+  <tr><td>{{ p.code }}<div class="muted">{{ p.created_at|date:"d M Y" }} · {{ p.proposed_by.display_name }}</div></td>
+    <td><a href="{% url 'asset_detail' p.asset.pk %}">{{ p.asset.tag }}</a> {{ p.asset.name }}<div class="muted">{{ p.asset.department.code }} · {{ p.asset.get_condition_display }}</div></td>
+    <td><strong>{{ p.get_action_display }}</strong>: {{ p.reason|truncatechars:140 }}</td>
+    <td><span class="badge {{ p.state }}">{{ p.get_state_display }}</span>
+      {% if p.decided_by %}<div class="muted">{{ p.decided_by.display_name }}{% if p.decision_note %}: {{ p.decision_note }}{% endif %}</div>{% endif %}
+      {% if p.state == 'COMPLETED' %}<div class="muted">{% if p.recipient %}To {{ p.recipient }}. {% endif %}Evidence: {{ p.evidence }}</div>{% endif %}</td>
+    <td>{% if row.can_decide %}
+        <form method="post" action="{% url 'eol_decide' p.pk %}" class="stack">{% csrf_token %}
+          <input type="text" name="note" placeholder="Note (required to reject)">
+          <div class="row"><button class="btn small" name="decision" value="approve">Approve</button>
+          <button class="btn small danger" name="decision" value="reject">Reject</button></div></form>
+      {% elif p.state == 'PROPOSED' and row.own %}<span class="muted">Your proposal. Another asset officer must decide.</span>
+      {% elif p.state == 'PROPOSED' %}<span class="muted">Waiting for an asset officer</span>
+      {% elif row.can_complete %}
+        <form method="post" action="{% url 'eol_complete' p.pk %}" class="stack">{% csrf_token %}
+          <input type="text" name="recipient" placeholder="{% if p.action == 'DONATE' %}Receiving organization (required){% else %}Recycler or contractor (optional){% endif %}">
+          <input type="text" name="evidence" placeholder="Receipt or certificate number" required>
+          <button class="btn small">Record completion</button></form>
+      {% elif p.state == 'APPROVED' %}<span class="muted">Waiting for the hand-over to be recorded</span>
+      {% else %}<span class="muted">-</span>{% endif %}</td></tr>
+  {% endwith %}{% endfor %}
+</table></div>
+{% else %}<div class="card empty">No end-of-life proposals yet. Propose one from an item's page.</div>{% endif %}
+{% endblock %}

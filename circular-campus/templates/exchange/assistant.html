@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Assistant · Circular Campus{% endblock %}
+{% block content %}
+<div class="row spread"><h1>Assistant</h1>
+  {% if turns %}<form method="post">{% csrf_token %}<button class="btn ghost" name="action" value="clear">Clear conversation</button></form>{% endif %}</div>
+<p class="sub">Ask about available surplus items, your own requests or your notifications.</p>
+<p class="note">The assistant answers only from this system's data and says "I don't know" when the data has no answer. It can be wrong, and it never does anything for you: to act, use the buttons and confirm on the form.</p>
+{% for turn in turns %}
+<div class="card">
+  <p><span class="label">You asked</span><br><strong>{{ turn.question }}</strong></p>
+  <p><span class="label">Assistant</span><br>{{ turn.answer }}</p>
+  {% if turn.items %}
+  <div class="table-wrap"><table>
+    <tr><th>Item</th><th>Category</th><th>Condition</th><th>Department</th><th>Qty</th><th></th></tr>
+    {% for a in turn.items %}
+    <tr><td><a href="{% url 'asset_detail' a.pk %}">{{ a.tag }}</a> {{ a.name }}</td><td>{{ a.category }}</td>
+      <td>{{ a.get_condition_display }}</td><td>{{ a.department }}</td><td>{{ a.quantity }}</td>
+      <td>{% if can_request and a.department_id != user.department_id %}<a class="btn small" href="{% url 'request_create' %}?asset={{ a.pk }}">Request this item</a>{% endif %}</td></tr>
+    {% endfor %}
+  </table></div>
+  {% endif %}
+  <p class="muted" style="margin:8px 0 0">Answered by: {{ turn.model }}{% if turn.fallback %} (rule-based fallback, AI service unavailable){% endif %}</p>
+</div>
+{% empty %}
+<div class="card empty">Try: "Any projectors in Engineering?", "Do you have lab stools?" or "What is the status of my requests?"</div>
+{% endfor %}
+<form method="post" class="card row end">{% csrf_token %}
+  <div style="flex:1 1 300px"><label for="question">Your question</label><input type="text" id="question" name="question" maxlength="300" required autofocus></div>
+  <div><button class="btn">Ask</button></div>
+</form>
+{% endblock %}

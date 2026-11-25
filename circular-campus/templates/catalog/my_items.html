@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}My items · Circular Campus{% endblock %}
+{% block content %}
+<div class="row spread"><h1>My items</h1>
+  <div class="row"><a class="btn {% if show == 'all' %}ghost{% endif %}" href="?show=current">Current</a><a class="btn {% if show != 'all' %}ghost{% endif %}" href="?show=all">Include closed</a></div></div>
+<p class="sub">Items you personally hold: the ones you received through an exchange{% if user.role == 'CUSTODIAN' %}, and the ones you registered for {{ user.department.name }}{% endif %}. {{ rows|length }} record{{ rows|length|pluralize }}, {{ total_units }} unit{{ total_units|pluralize }}.
+{% if user.role != 'CUSTODIAN' %}When you no longer need an item, open it and click <strong>I no longer need this</strong>; your custodian can then offer it to others.{% endif %}</p>
+{% if rows %}
+<div class="table-wrap"><table>
+  <tr><th>Item</th><th>Category</th><th>Qty</th><th>Condition</th><th>Status</th><th>Department</th><th>Received</th></tr>
+  {% for row in rows %}{% with a=row.asset %}
+  <tr><td><a href="{% url 'asset_detail' a.pk %}">{{ a.tag }}</a> {{ a.name }}<div class="muted">{{ a.location|default:"" }}</div></td>
+    <td>{{ a.category }}</td><td>{{ a.quantity }}</td><td>{{ a.get_condition_display }}</td>
+    <td><span class="badge {{ a.state }}">{{ a.get_state_display }}</span></td>
+    <td>{{ a.department.code }}</td><td>{{ row.received|date:"d M Y"|default:"-" }}</td></tr>
+  {% endwith %}{% endfor %}
+</table></div>
+{% else %}<div class="card empty">You don't hold any items yet. Items appear here after you confirm receipt of something you requested.</div>{% endif %}
+{% endblock %}

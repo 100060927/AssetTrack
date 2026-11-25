@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}All assets · Circular Campus{% endblock %}
+{% block content %}
+<div class="row spread"><h1>All assets</h1>
+  <a class="btn ghost" href="?{{ request.GET.urlencode }}{% if request.GET %}&{% endif %}format=csv">Export CSV</a></div>
+<p class="sub">What every department holds, in every status, with full details. Click a department to see only its items.</p>
+<form method="get" class="card row end filters">
+  {% for field in form %}<div>{{ field.label_tag }}{{ field }}</div>{% endfor %}
+  <div style="flex:0 0 auto"><button class="btn">Show</button> <a class="btn ghost" href="{% url 'all_assets' %}">Clear</a></div>
+</form>
+
+<h2>By department</h2>
+<div class="table-wrap"><table>
+  <tr><th>Department</th><th>Records</th><th>Units</th><th>Available</th><th>Reserved or on the way</th><th>In use</th><th>Blocked</th><th>Replacement value (AED)</th></tr>
+  {% for d in summary %}
+  <tr><td><a href="?department={{ d.department__id }}">{{ d.department__name }}</a></td>
+    <td>{{ d.records }}</td><td><strong>{{ d.units|default:0 }}</strong></td><td>{{ d.available|default:0 }}</td>
+    <td>{{ d.busy|default:0 }}</td><td>{{ d.in_use|default:0 }}</td><td>{{ d.blocked|default:0 }}</td>
+    <td>{% if d.value is not None %}{{ d.value|floatformat:"2g" }}{% else %}Not recorded{% endif %}</td></tr>
+  {% empty %}<tr><td colspan="8" class="muted">Nothing matches.</td></tr>
+  {% endfor %}
+</table></div>
+<p class="muted">Value = units × replacement cost per unit, for items still on campus. Items without a recorded cost are left out of the value, never guessed.</p>
+
+<h2>Items ({{ count }}{% if count > 500 %}, showing 500; export CSV for all{% endif %})</h2>
+{% if items %}
+<div class="table-wrap"><table>
+  <tr><th>Item</th><th>Department</th><th>Category</th><th>Condition</th><th>Status</th><th>Qty</th><th>Held by</th><th>Location</th><th>Cost per unit (AED)</th></tr>
+  {% for a in items %}
+  <tr><td><a href="{% url 'asset_detail' a.pk %}">{{ a.tag }}</a> {{ a.name }}</td>
+    <td>{{ a.department.code }}</td><td>{{ a.category }}</td><td>{{ a.get_condition_display }}</td>
+    <td><span class="badge {{ a.state }}">{{ a.get_state_display }}</span></td><td>{{ a.quantity }}</td>
+    <td>{{ a.owner.display_name }}</td><td>{{ a.location|default:"-" }}</td>
+    <td>{% if a.replacement_unit_cost is not None %}{{ a.replacement_unit_cost|floatformat:2 }}{% else %}-{% endif %}</td></tr>
+  {% endfor %}
+</table></div>
+{% else %}<div class="card empty">No items match these filters.</div>{% endif %}
+{% endblock %}
